@@ -28,14 +28,24 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-X_FRAME_OPTIONS = 'ALLOW-FROM ' + os.environ.get('CODIO_HOSTNAME', 'localhost') + '-8000.codio.io'
+# Codio-specific settings
+codio_hostname = os.environ.get('CODIO_HOSTNAME', '')
+if codio_hostname:
+    # For Codio, set X_FRAME_OPTIONS (though middleware is commented out)
+    # Using SAMEORIGIN since ALLOW-FROM is deprecated in newer Django
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    CSRF_TRUSTED_ORIGINS = [
+        'https://' + codio_hostname + '-8000.codio.io',
+        'https://' + codio_hostname + '-3000.codio.io',
+    ]
+else:
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://localhost:3000']
 
-CSRF_COOKIE_SAMESITE = None
-CSRF_TRUSTED_ORIGINS = ['https://' + os.environ.get('CODIO_HOSTNAME', 'localhost') + '-8000.codio.io']
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True if codio_hostname else False
+SESSION_COOKIE_SECURE = True if codio_hostname else False
 
 # Application definition
 
@@ -140,10 +150,18 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'https://' + os.environ.get('CODIO_HOSTNAME', 'localhost') + '-3000.codio.io',
-]
+codio_hostname = os.environ.get('CODIO_HOSTNAME', '')
+if codio_hostname:
+    CORS_ALLOWED_ORIGINS = [
+        'https://' + codio_hostname + '-3000.codio.io',
+        'https://' + codio_hostname + '-8000.codio.io',
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://localhost:8000',
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Set to False for security, use CORS_ALLOWED_ORIGINS instead
 
